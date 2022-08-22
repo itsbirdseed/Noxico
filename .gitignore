@@ -12,3 +12,6 @@ Japanese/
 Dutch/
 .hgignore
 .hg/
+
+*.swp
+.vs/
