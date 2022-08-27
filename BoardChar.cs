@@ -19,11 +19,11 @@ namespace Noxico
 		public Dijkstra DijkstraMap { get; private set; }
 		public Character Character { get; set; }
 
-		public string OnTick { get; set; }
-		public string OnLoad { get; set; }
-		public string OnPlayerBump { get; set; }
-		public string OnHurt { get; set; }
-		public string OnPathFinish { get; set; }
+		public List<string> TickQueue { get; set; }
+		public List<string> LoadQueue { get; set; }
+		public List<string> PlayerBumpQueue { get; set; }
+		public List<string> HurtQueue { get; set; }
+		public List<string> PathFinishQueue { get; set; }
 		public bool ScriptPathing { get; set; }
 		public Dijkstra ScriptPathTarget { get; private set; }
 		public int ScriptPathTargetX { get; private set; }
@@ -43,6 +43,12 @@ namespace Noxico
 			this.BackgroundColor = Color.Gray;
 			this.Blocking = true;
 
+			this.TickQueue = new List<string>();
+			this.LoadQueue = new List<string>();
+			this.PlayerBumpQueue = new List<string>();
+			this.HurtQueue = new List<string>();
+			this.PathFinishQueue = new List<string>();
+
 			if (this.ParentBoard == null)
 				return;
 			this.DijkstraMap = new Dijkstra(this.ParentBoard);
@@ -56,6 +62,12 @@ namespace Noxico
 			Character.BoardChar = this;
 			this.Blocking = true;
 			RestockVendor();
+			
+			this.TickQueue = new List<string>();
+			this.LoadQueue = new List<string>();
+			this.PlayerBumpQueue = new List<string>();
+			this.HurtQueue = new List<string>();
+			this.PathFinishQueue = new List<string>();
 		}
 
 		public override string ToString()
@@ -440,7 +452,7 @@ namespace Noxico
 					this.ParentBoard.Immolate(this.YPosition, this.XPosition);
 			}
 
-			if (!RunScript(OnTick))
+			if (!RunScriptQueue(TickQueue))
 				return;
 
 			CheckForTimedItems();
@@ -486,7 +498,7 @@ namespace Noxico
 				if (this.XPosition == ScriptPathTargetX && this.YPosition == ScriptPathTargetY)
 				{
 					ScriptPathing = false;
-					RunScript(OnPathFinish);
+					RunScriptQueue(PathFinishQueue);
 				}
 				return;
 			}
@@ -786,7 +798,7 @@ namespace Noxico
 				if (this.XPosition == ScriptPathTargetX && this.YPosition == ScriptPathTargetY)
 				{
 					ScriptPathing = false;
-					RunScript(OnPathFinish);
+					RunScriptQueue(PathFinishQueue);
 				}
 				return;
 			}
@@ -1289,7 +1301,7 @@ namespace Noxico
 
 		public virtual bool Hurt(float damage, string cause, object aggressor, bool finishable = false, bool leaveCorpse = true)
 		{
-			RunScript(OnHurt, "damage", damage);
+			RunScriptQueue(HurtQueue, "damage", damage);
 			var health = Character.Health;
 			if (health - damage <= 0)
 			{
@@ -1454,6 +1466,14 @@ namespace Noxico
 			return true;
 		}
 
+		public bool RunScriptQueue(List<string> scripts, string extraParm = "", float extraVal = 0)
+		{
+			bool r = false;
+			foreach (string script in scripts)
+				r |= RunScript(script, extraParm, extraVal);
+			return r;
+		}
+
 		public void MoveTo(int x, int y, string target)
 		{
 			ScriptPathTarget = new Dijkstra(this.ParentBoard, !Character.IsSlime);
@@ -1465,44 +1485,73 @@ namespace Noxico
 			ScriptPathing = true;
 		}
 
-		public void AssignScripts(string id)
+		public string GetScriptFromSource(string source)
 		{
-			var uniques = Mix.GetTokenTree("uniques.tml", true);
-			var planSource = uniques.FirstOrDefault(t => t.Name == "character" && (t.Text == id));
-			var scripts = planSource.Tokens.Where(t => t.Name == "script");
+			if (source.Contains(".tml//"))
+			{
+				string filePath = source.Split(new[] { "//" }, StringSplitOptions.None)[0];
+				string treePath = source.Split(new[] { "//" }, StringSplitOptions.None)[1];
+				var fileSource = Mix.GetTokenTree(filePath).FirstOrDefault(t => t.Name == treePath.Split('/')[0] || (t.Name == "character" && t.Text == treePath.Split('/')[0]));
+				if (fileSource == null)
+					throw new Exception("Unable to find source script with the given .tml/token tree pair.");
+				Token scriptToken = fileSource.Path(treePath.Substring(fileSource.Name.Length + 1));
+				return scriptToken.GetToken("#text").Text;
+			}
+			else if (source.EndsWith(".lua", StringComparison.Ordinal))
+			{
+				return Mix.GetString(source);
+			}
+			else
+				throw new Exception("Script source path " + source + " is not a .lua or a .tml/token tree pair.");
+
+		}
+
+		public void AssignScripts(string id = "")
+		{
+			List<Token> scripts = new List<Token>();
+			var unsourced = false;
+			foreach (Token scriptToken in this.Character.GetAll("script"))
+			{
+				scripts.Add(scriptToken);
+				unsourced |= !scriptToken.HasToken("source");
+			}
 			foreach (var script in scripts)
 			{
 				var target = script.Text;
+				string scriptString;
+				if (script.HasToken("source"))
+					scriptString = GetScriptFromSource(script.GetToken("source").Text);
+				else
+					scriptString = script.GetToken("#text").Text;
 				switch (target)
 				{
 					case "tick":
-						OnTick = script.GetToken("#text").Text;
+						TickQueue.Add(scriptString);
 						break;
 					case "load":
-						OnLoad = script.GetToken("#text").Text;
+						LoadQueue.Add(scriptString);
 						break;
 					case "bump":
 					case "playerbump":
-						OnPlayerBump = script.GetToken("#text").Text;
+						PlayerBumpQueue.Add(scriptString);
 						break;
 					case "hurt":
-						OnHurt = script.GetToken("#text").Text;
+						HurtQueue.Add(scriptString);
 						break;
 					case "path":
 					case "pathfinish":
-						OnPathFinish = script.GetToken("#text").Text;
+						PathFinishQueue.Add(scriptString);
 						break;
 				}
 			}
-			this.Character.RemoveAll("script");
-			this.Character.AddToken("script", 0, id);
 		}
+		
 		public void ReassignScripts()
 		{
 			var scriptSource = this.Character.Path("script");
 			if (scriptSource == null)
 				return;
-			AssignScripts(scriptSource.Text);
+			AssignScripts();
 		}
 
 		public void AimShot(Entity target)

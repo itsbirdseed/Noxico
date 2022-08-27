@@ -658,7 +658,7 @@ namespace Noxico
 				newBoard.BindEntities();
 
 				foreach (var e in newBoard.Entities.OfType<BoardChar>())
-					e.RunScript(e.OnLoad);
+					e.RunScriptQueue(e.LoadQueue);
 
 				foreach (var e in newBoard.Entities.OfType<Door>())
 					e.UpdateMapSolidity();

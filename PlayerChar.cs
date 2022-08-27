@@ -239,9 +239,9 @@ namespace Noxico
 							EndTurn();
 							return;
 						}
-						if (!bc.OnPlayerBump.IsBlank())
+						if (bc.PlayerBumpQueue.Count != 0)
 						{
-							bc.RunScript(bc.OnPlayerBump);
+							bc.RunScriptQueue(bc.PlayerBumpQueue);
 							return;
 						}
 						//Displace!
