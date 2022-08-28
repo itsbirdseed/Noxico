@@ -655,6 +655,7 @@ testBoard.Floodfill(1, 1, nil, ""nether"", true)
 				if (!Player.Character.HasToken("player"))
 					Player.Character.AddToken("player", (int)DateTime.Now.Ticks);
 				Player.Character.RecalculateStatBonuses();
+				Player.AssignScripts();
 				Player.Character.CheckHasteSlow();
 
 				//this solves SO MANY things holy shit
@@ -1315,9 +1316,7 @@ testBoard.Floodfill(1, 1, nil, ""nether"", true)
 							{
 								token = pc.Path(bonus.Tokens[0].Name);
 								if (token == null)
-									token = pc.AddToken(bonus.Tokens[0].Name);
-								token.Value = bonus.Tokens[0].Value;
-								token.Text = bonus.Tokens[0].Text;
+									token = pc.AddToken(bonus.Tokens[0]);
 							}
 							break;
 					}
@@ -1325,6 +1324,7 @@ testBoard.Floodfill(1, 1, nil, ""nether"", true)
 			}
 
 			Player.Character.RecalculateStatBonuses();
+			Player.AssignScripts();
 			Player.Character.CheckHasteSlow();
 			Player.Character.UpdateTitle();
 			Player.AdjustView();
