@@ -1491,11 +1491,10 @@ namespace Noxico
 			{
 				string filePath = source.Split(new[] { "//" }, StringSplitOptions.None)[0];
 				string treePath = source.Split(new[] { "//" }, StringSplitOptions.None)[1];
-				var fileSource = Mix.GetTokenTree(filePath).FirstOrDefault(t => t.Name == treePath.Split('/')[0] || (t.Name == "character" && t.Text == treePath.Split('/')[0]));
-				if (fileSource == null)
-					throw new Exception("Unable to find source script with the given .tml/token tree pair.");
-				Token scriptToken = fileSource.Path(treePath.Substring(fileSource.Name.Length + 1));
-				return scriptToken.GetToken("#text").Text;
+				Token root = new Token();
+				foreach (Token treeBase in Mix.GetTokenTree(filePath))
+					root.AddToken(treeBase);
+				return root.Path(treePath).GetToken("#text").Text;
 			}
 			else if (source.EndsWith(".lua", StringComparison.Ordinal))
 			{
