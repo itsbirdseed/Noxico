@@ -768,5 +768,40 @@ namespace Noxico
 			}
 			return false;
 		}
+		
+		/// <summary>
+		/// Constructs a path to the Token within a token list and returns it as a string.
+		/// </summary>
+		/// <param name="tokenList">The token list to derive a path from.</param>
+		/// <returns>Returns a list parsable by TokenCarrier.Path, indexed by token number. If not found, returns null.</returns>
+		/// <example>If token baz is the fourth "baz" child token of the only "bar" child token of the second "foo" token within the list, returns foo[2]/bar/baz[4].</example>
+		public string ReversePath(List<Token> tokenList)
+		{
+			string path;
+			var searched = new List<string>();
+			foreach (Token token in tokenList)
+			{
+				if (!searched.Contains(token.Name))
+				{
+					var namedSames = tokenList.FindAll(t => t.Name.Equals(token.Name, StringComparison.OrdinalIgnoreCase)).ToList();
+					for (int namedNum = 0; namedNum < namedSames.Count(); namedNum++)
+					{
+						Token namedSame = namedSames[namedNum];
+						path = namedNum == 0 ? namedSame.Name : namedSame.Name + '[' + (namedNum + 1).ToString() + ']';
+						if (namedSame == this)
+							return path;
+						else
+						{
+							string childPath = this.ReversePath(namedSame.Tokens);
+							if (childPath != null)
+								return path + '/' + childPath;
+						}
+					}
+					searched.Add(token.Name);
+				}
+			}
+			return null;
+		}
+
 	}
 }
