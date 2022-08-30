@@ -710,6 +710,7 @@ namespace Noxico
 			var nrg = Energy;
 			Energy = 5000;
 			var r = Lua.Environment.EachBoardCharTurn(this, this.Character);
+			RunScriptQueue(TickQueue);
 			Energy = nrg;
 
 			NoxicoGame.PlayerReady = false;

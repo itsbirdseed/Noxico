@@ -224,7 +224,7 @@ namespace Noxico
 											if (ActionList.Answer is string && ((string)ActionList.Answer).StartsWith('!'))
 												newBoardChar.AssignScripts(((string)ActionList.Answer).Substring(1));
 											else
-												newBoardChar.AssignScripts((string)ActionList.Answer);
+												newBoardChar.AssignScripts((string)ActionList.Answer, true);
 											ParentBoard.Redraw();
 											NoxicoGame.Mode = UserMode.Walkabout;
 											Hide();

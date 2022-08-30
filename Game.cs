@@ -1324,7 +1324,7 @@ testBoard.Floodfill(1, 1, nil, ""nether"", true)
 			}
 
 			Player.Character.RecalculateStatBonuses();
-			Player.AssignScripts();
+			Player.AssignScripts(bodyplan, true);
 			Player.Character.CheckHasteSlow();
 			Player.Character.UpdateTitle();
 			Player.AdjustView();

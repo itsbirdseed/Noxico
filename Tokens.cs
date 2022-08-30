@@ -770,7 +770,7 @@ namespace Noxico
 		}
 		
 		/// <summary>
-		/// Constructs a path to the Token within a token list and returns it as a string.
+		/// Constructs a path to the first equal token within a token list and returns it as a string.
 		/// </summary>
 		/// <param name="tokenList">The token list to derive a path from.</param>
 		/// <returns>Returns a list parsable by TokenCarrier.Path, indexed by token number. If not found, returns null.</returns>
@@ -788,7 +788,7 @@ namespace Noxico
 					{
 						Token namedSame = namedSames[namedNum];
 						path = namedNum == 0 ? namedSame.Name : namedSame.Name + '[' + (namedNum + 1).ToString() + ']';
-						if (namedSame == this)
+						if (namedSame.Equals(this))
 							return path;
 						else
 						{

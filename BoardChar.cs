@@ -1407,7 +1407,6 @@ namespace Noxico
 			newChar.Character = Character.LoadFromFile(stream);
 			newChar.Character.BoardChar = newChar;
 			newChar.AdjustView();
-			newChar.ReassignScripts();
 			newChar.RestockVendor();
 			return newChar;
 		}
@@ -1505,23 +1504,35 @@ namespace Noxico
 
 		}
 
-		public void AssignScripts(string id = "")
+		public void AssignScripts(string id = null, bool fromBodyPlan = false)
 		{
-			List<Token> scripts = new List<Token>();
-			var unsourced = false;
-			foreach (Token scriptToken in this.Character.GetAll("script"))
+			string tml;
+			Token planSource;
+			List<Token> plans = new List<Token>();
+			if (!fromBodyPlan)
 			{
-				scripts.Add(scriptToken);
-				unsourced |= !scriptToken.HasToken("source");
+				tml = "uniques.tml";
+				plans = Mix.GetTokenTree(tml, true);
+				planSource = plans.FirstOrDefault(t => t.Name == "character" && (t.Text == (id ?? this.Character.ID)));
 			}
+			else
+			{
+				tml = "bodyplans.tml";
+				plans = Character.Bodyplans;
+				planSource = plans.FirstOrDefault(t => t.Name == "bodyplan" && (t.Text == (id ?? this.Character.ID)));
+			}
+			var scripts = this.Character.Tokens.Where(t => t.Name == "script");
+			
 			foreach (var script in scripts)
 			{
 				var target = script.Text;
-				string scriptString;
-				if (script.HasToken("source"))
-					scriptString = GetScriptFromSource(script.GetToken("source").Text);
-				else
+				string scriptString = null;
+				if (script.HasToken("#text"))
 					scriptString = script.GetToken("#text").Text;
+				if (!script.HasToken("source"))
+					script.AddToken("source", tml + "//" + planSource.Name + "[=" + planSource.Text + "]/" + script.ReversePath(planSource.Tokens));
+				scriptString = scriptString ?? GetScriptFromSource(script.GetToken("source").Text);
+				script.RemoveToken("#text");
 				switch (target)
 				{
 					case "tick":
@@ -1543,14 +1554,6 @@ namespace Noxico
 						break;
 				}
 			}
-		}
-		
-		public void ReassignScripts()
-		{
-			var scriptSource = this.Character.Path("script");
-			if (scriptSource == null)
-				return;
-			AssignScripts();
 		}
 
 		public void AimShot(Entity target)

@@ -320,7 +320,6 @@ namespace Noxico
 						};
 						this.Entities.Add(newChar);
 						newChar.AssignScripts(unique.Text);
-						newChar.ReassignScripts();
 					}
 
 					if (!tile.HasToken("fluid"))
